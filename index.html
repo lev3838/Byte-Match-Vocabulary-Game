@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Byte Match: Computer Vocabulary Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#d9f1ff;--card:#fff;--ink:#17306b;--word:#bfe0ff;--accent:#ffc93c;--good:#3ddc97;--bad:#ff6b6b;--shadow:#17306b;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101b3d;--card:#1d2d62;--ink:#eaf2ff;--word:#2f4a9a;--shadow:#050a1c}}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font-family:'Fredoka','Trebuchet MS',system-ui,sans-serif;overflow-x:hidden}
+#bits{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.bit{position:absolute;bottom:-40px;font-weight:700;opacity:.13;animation:rise linear infinite}
+@keyframes rise{to{transform:translateY(-115vh) rotate(25deg)}}
+main{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:18px 14px 40px}
+h1{font-size:clamp(2rem,6vw,3.2rem);margin:6px 0 4px;font-weight:700;letter-spacing:-.5px}
+.logo{display:inline-flex;gap:4px}
+.logo span{display:inline-block;background:var(--accent);color:#17306b;border:3px solid var(--shadow);border-radius:10px;padding:0 9px;box-shadow:3px 3px 0 var(--shadow);animation:bob 2.4s ease-in-out infinite}
+.logo span:nth-child(2){animation-delay:.2s;background:var(--good)}
+.logo span:nth-child(3){animation-delay:.4s;background:var(--bad)}
+.logo span:nth-child(4){animation-delay:.6s;background:var(--word)}
+@keyframes bob{50%{transform:translateY(-7px) rotate(-3deg)}}
+p.lead{font-size:1.15rem;max-width:34em;margin:10px 0 20px}
+button{font:inherit;font-weight:600;cursor:pointer;color:#17306b;background:var(--accent);border:3px solid var(--shadow);border-radius:14px;padding:10px 22px;font-size:1.15rem;box-shadow:4px 4px 0 var(--shadow);transition:transform .1s,box-shadow .1s}
+button:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--shadow)}
+button:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--shadow)}
+button:focus-visible,.card:focus-visible{outline:4px solid var(--ink);outline-offset:3px}
+.hud{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.pill{background:var(--card);border:3px solid var(--shadow);border-radius:999px;padding:4px 16px;font-weight:600;box-shadow:3px 3px 0 var(--shadow)}
+.bar{height:16px;background:var(--card);border:3px solid var(--shadow);border-radius:99px;overflow:hidden;margin-bottom:14px}
+.bar i{display:block;height:100%;width:0;background:var(--good);transition:width .5s cubic-bezier(.3,1.5,.5,1)}
+#grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;perspective:900px}
+@media(min-width:700px){#grid{grid-template-columns:repeat(4,1fr);gap:14px}}
+.card{min-height:112px;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px;border:3px solid var(--shadow);border-radius:16px;background:var(--card);box-shadow:4px 4px 0 var(--shadow);cursor:pointer;font-size:.95rem;line-height:1.25;font-weight:500;user-select:none;animation:deal .55s cubic-bezier(.3,1.4,.5,1) backwards;animation-delay:calc(var(--i)*55ms);transition:transform .15s,background .2s}
+.card.w{background:var(--word);font-size:1.35rem;font-weight:700}
+.card:hover{transform:translateY(-3px)}
+.card.sel{background:var(--accent);color:#17306b;transform:translateY(-6px) scale(1.05) rotate(-1.5deg)}
+.card.bad{animation:shake .45s;background:var(--bad);color:#17306b}
+.card.ok{background:var(--good);color:#17306b;pointer-events:none;animation:pop .6s forwards}
+@keyframes deal{from{opacity:0;transform:translateY(-60px) rotateX(90deg) scale(.6)}}
+@keyframes shake{20%,60%{transform:translateX(-9px)}40%,80%{transform:translateX(9px)}}
+@keyframes pop{35%{transform:scale(1.2) rotate(3deg)}100%{transform:scale(.0);opacity:0}}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,120px);background:var(--card);border:3px solid var(--shadow);border-radius:16px;padding:10px 18px;box-shadow:4px 4px 0 var(--shadow);transition:transform .35s cubic-bezier(.3,1.5,.5,1);z-index:5;max-width:92vw;text-align:center}
+#toast.show{transform:translate(-50%,0)}
+.hide{display:none!important}
+.stars{font-size:3rem;letter-spacing:6px}
+.stars b{display:inline-block;animation:spin .8s backwards}
+@keyframes spin{from{transform:scale(0) rotate(-270deg)}}
+.review{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 18px}
+.review span{background:var(--card);border:3px solid var(--shadow);border-radius:10px;padding:2px 12px;font-weight:600}
+.conf{position:fixed;top:-20px;width:10px;height:14px;z-index:9;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="bits" aria-hidden="true"></div>
+<main>
+  <section id="start">
+    <h1><span class="logo" aria-label="Byte Match"><span>B</span><span>y</span><span>t</span><span>e</span></span> Match</h1>
+    <p class="lead">Tap a computer word, then tap the meaning that goes with it. Match all the pairs to finish each round. There are 5 rounds and 30 words to learn.</p>
+    <button id="go">Start playing</button>
+  </section>
+
+  <section id="game" class="hide">
+    <div class="hud">
+      <span class="pill" id="round">Round 1 of 5</span>
+      <span class="pill" id="score">Stars: 0</span>
+      <span class="pill" id="miss">Misses: 0</span>
+    </div>
+    <div class="bar"><i id="prog"></i></div>
+    <div id="grid"></div>
+  </section>
+
+  <section id="end" class="hide">
+    <h1>You did it!</h1>
+    <div class="stars" id="stars"></div>
+    <p class="lead" id="sum"></p>
+    <div id="rev" class="hide"><p class="lead" style="margin-bottom:6px">Words to practice next time:</p><div class="review" id="revList"></div></div>
+    <button id="again">Play again</button>
+  </section>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const WORDS=[
+["binary","A number system that uses only 0 and 1."],
+["bit","The smallest unit of data in a computer, either 0 or 1."],
+["byte","A group of 8 bits that can stand for a letter or number."],
+["cache","A small storage area that helps a computer work faster."],
+["circuit","A path that electricity moves through in a computer."],
+["coding","Writing instructions for a computer."],
+["computer","A machine that uses data and instructions to work."],
+["data","Information that a computer uses or stores."],
+["digital","Information made of 0s and 1s."],
+["download","Moving information from the internet to a device."],
+["error","A mistake in a computer program or system."],
+["file","A place where information is saved on a computer."],
+["hardware","The physical parts of a computer."],
+["input","Information that goes into a computer."],
+["memory","A part of a computer that stores information."],
+["microchip","A small part that holds electronic circuits."],
+["output","Information that comes out of a computer."],
+["pixel","A tiny dot that makes up a picture on a screen."],
+["RAM","Memory that stores data while a computer is working."],
+["ROM","Memory that keeps permanent instructions."],
+["resolution","How clear a digital image is."],
+["router","A device that sends data between networks."],
+["save","To store information for later use."],
+["signal","A message sent in a computer system."],
+["storage","A place where digital information is kept."],
+["switch","A part of a computer that can be on or off."],
+["system","Parts that work together in a computer."],
+["transmit","To send information from one place to another."],
+["upload","Sending information to the internet."],
+["zero","A binary number that means off."]];
+const $=id=>document.getElementById(id);
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const PER=6,ROUNDS=5;
+let deck,round,left,sel,busy,miss,stars,missed;
+
+// drifting 0s and 1s
+(function(){const b=$('bits');for(let i=0;i<22;i++){const e=document.createElement('div');e.className='bit';e.textContent=Math.random()<.5?'0':'1';e.style.left=Math.random()*100+'%';e.style.fontSize=(24+Math.random()*50)+'px';e.style.animationDuration=(14+Math.random()*16)+'s';e.style.animationDelay=(-Math.random()*20)+'s';b.appendChild(e)}})();
+
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),1800)}
+function show(id){['start','game','end'].forEach(s=>$(s).classList.toggle('hide',s!==id))}
+
+function start(){deck=shuffle(WORDS);round=0;miss=0;stars=0;missed=new Set();show('game');deal()}
+function deal(){
+  const set=deck.slice(round*PER,round*PER+PER);left=PER;sel=null;busy=false;
+  $('round').textContent=`Round ${round+1} of ${ROUNDS}`;
+  $('score').textContent=`Stars: ${stars}`;$('miss').textContent=`Misses: ${miss}`;
+  $('prog').style.width=(round/ROUNDS*100)+'%';
+  const cards=shuffle(set.flatMap(([w,d])=>[{k:w,t:w,w:1},{k:w,t:d,w:0}]));
+  const g=$('grid');g.innerHTML='';
+  cards.forEach((c,i)=>{
+    const e=document.createElement('div');
+    e.className='card'+(c.w?' w':'');e.textContent=c.t;e.tabIndex=0;e.setAttribute('role','button');
+    e.style.setProperty('--i',i);e.dataset.k=c.k;e.dataset.w=c.w;
+    e.onclick=()=>pick(e);
+    e.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();pick(e)}};
+    g.appendChild(e);
+  });
+}
+function pick(e){
+  if(busy||e.classList.contains('ok'))return;
+  if(!sel){sel=e;e.classList.add('sel');return}
+  if(sel===e){e.classList.remove('sel');sel=null;return}
+  if(sel.dataset.w===e.dataset.w){sel.classList.remove('sel');sel=e;e.classList.add('sel');return}
+  const a=sel;sel=null;busy=true;
+  if(a.dataset.k===e.dataset.k){
+    a.classList.remove('sel');a.classList.add('ok');e.classList.add('ok');
+    stars++;left--;$('score').textContent=`Stars: ${stars}`;
+    toast(`${a.dataset.k}: ${WORDS.find(w=>w[0]===a.dataset.k)[1]}`);
+    burst(e);
+    setTimeout(()=>{busy=false;if(!left)next()},650);
+  }else{
+    miss++;$('miss').textContent=`Misses: ${miss}`;
+    missed.add(a.dataset.k);missed.add(e.dataset.k);
+    a.classList.remove('sel');a.classList.add('bad');e.classList.add('bad');
+    setTimeout(()=>{a.classList.remove('bad');e.classList.remove('bad');busy=false},480);
+  }
+}
+function next(){
+  round++;
+  if(round<ROUNDS){$('prog').style.width=(round/ROUNDS*100)+'%';toast(`Round ${round} done! Get ready.`);setTimeout(deal,900)}
+  else finish();
+}
+function burst(el){
+  const r=el.getBoundingClientRect(),cols=['#ffc93c','#3ddc97','#ff6b6b','#6bb8ff'];
+  for(let i=0;i<10;i++)confetti(r.left+r.width/2,r.top+r.height/2,cols[i%4]);
+}
+function confetti(x,y,c,fall){
+  const e=document.createElement('div');e.className='conf';e.style.background=c;
+  if(fall){e.style.left=Math.random()*100+'vw';e.style.animationDuration=(2+Math.random()*2.5)+'s'}
+  else{e.style.left=x+'px';e.style.top=y+'px';e.style.animation='none';
+    e.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:`translate(${(Math.random()-.5)*220}px,${(Math.random()-.7)*200}px) rotate(${Math.random()*540}deg) scale(.4)`,opacity:0}],{duration:800,easing:'ease-out'})}
+  document.body.appendChild(e);setTimeout(()=>e.remove(),4500);
+}
+function finish(){
+  $('prog').style.width='100%';
+  const n=miss<=3?3:miss<=10?2:1;
+  $('stars').innerHTML=[1,2,3].map(i=>`<b style="animation-delay:${i*.25}s;opacity:${i<=n?1:.25}">★</b>`).join('');
+  $('sum').textContent=`You matched all 30 words with ${miss} ${miss===1?'miss':'misses'}.`;
+  const m=[...missed];$('rev').classList.toggle('hide',!m.length);
+  $('revList').innerHTML='';m.forEach(w=>{const s=document.createElement('span');s.textContent=w;$('revList').appendChild(s)});
+  show('end');
+  for(let i=0;i<60;i++)setTimeout(()=>confetti(0,0,['#ffc93c','#3ddc97','#ff6b6b','#6bb8ff'][i%4],true),i*40);
+}
+$('go').onclick=start;$('again').onclick=start;
+</script>
+</body>
+</html>
